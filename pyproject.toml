@@ -14,7 +14,10 @@ dependencies = []
 
 [project.optional-dependencies]
 vlm = ["transformers>=4.40", "torch>=2.0", "accelerate>=0.30"]
-dev = ["pytest>=7.0", "matplotlib>=3.7"]
+video = ["transformers>=4.49", "torch>=2.0", "accelerate>=0.30",
+         "opencv-python-headless>=4.8", "pillow>=10",
+         "pandas>=2.0", "pyarrow>=14", "huggingface_hub>=0.23"]
+dev = ["pytest>=7.0", "matplotlib>=3.7", "pillow>=10"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

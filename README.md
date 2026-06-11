@@ -1,12 +1,12 @@
 # Video Modality Diagnostics
 
-**Does your video model actually watch the video?** Multimodal VideoQA models often
-answer from the *language prior* alone — question/option wording — while ignoring the
-frames, the audio or the subtitles ("modality collapse"). `vmd` is a small,
-model-agnostic toolkit that measures this directly:
+**A model-agnostic harness for measuring modality usage and collapse in multimodal
+QA.** Multimodal models often answer from the *language prior* alone — question/option
+wording — while ignoring the other input channels ("modality collapse"). `vmd`
+measures this directly:
 
 - **Blind baseline** — accuracy with *all* media removed. If it is close to the full
-  accuracy, the model isn't using the video. The difference is the **collapse gap**.
+  accuracy, the model isn't using the media channels. The difference is the **collapse gap**.
 - **Modality ablations** — leave-one-out and single-modality accuracy per channel
   (vision / audio / subtitles).
 - **Modality contribution** — the accuracy drop when each channel is removed.
@@ -16,6 +16,15 @@ model-agnostic toolkit that measures this directly:
 Any model is plugged in through a 1-method `Backend` interface
 (`answer(item, view) -> option index`); the diagnostic only controls *which evidence
 channels the backend is allowed to see*.
+
+> **Scope, stated upfront.** The modality channels in this repo are *textual evidence
+> proxies* (visual facts, audio tags, subtitles) standing in for raw frames and audio.
+> That is a deliberate trade-off: it makes the harness cheap, deterministic, and
+> runnable in CI against any chat LLM — and it means the harness measures **channel
+> usage and collapse**, not visual perception — and it is complemented by a
+> **frame-level backend**: `VLMVideoBackend` runs a video VLM (Qwen2.5-VL) on real
+> sampled frames over a NExT-QA subset, turning the same metrics into end-to-end
+> video measurements (see *Real video* below).
 
 ## Quick start (offline, no GPU)
 
@@ -90,6 +99,25 @@ evidence channels this probe measures word-order sensitivity rather than content
 removal — use the `noise` (token-drop) corruption, or a frame-level VLM backend,
 to measure true content degradation.
 
+## Real video: a VLM on NExT-QA frames
+
+`src/vmd/video.py` implements the frame-level path: uniform frame sampling from the
+.mp4 (OpenCV), **frame-sequence corruptions** — temporal `shuffle` (destroys order,
+preserves content: the video analogue of token shuffling) and `drop` (destroys
+content) — and `VLMVideoBackend` (Qwen2.5-VL-3B by default). The metrics, ablation
+grid and reports are reused unchanged; on this subset the gold modality is vision,
+so the diagnostic reduces to its headline numbers: **collapse gap** (frames vs no
+frames) and the two robustness curves.
+
+```bash
+pip install -e ".[video]"
+python scripts/prepare_nextqa.py --n 60      # NExT-QA MC subset + its videos
+```
+
+then run `notebooks/video_vlm_colab.ipynb`
+([Colab](https://colab.research.google.com/github/mlahozy21/video-modality-diagnostics/blob/main/notebooks/video_vlm_colab.ipynb))
+on a GPU runtime (~30–40 min on an L4 for n=60, inference only).
+
 ## How it works
 
 ```
@@ -119,14 +147,26 @@ format_report(...)                  # readable summary
 .
 ├── README.md  LICENSE  pyproject.toml  .gitignore
 ├── src/vmd/                 # library (no hard dependencies)
+│   └── video.py             # frame sampling, frame corruptions, VLM backend
 ├── data/sample/videoqa.jsonl  # 12-item balanced sample (4 per gold modality)
 ├── scripts/
 │   ├── run_diagnostic.py    # CLI: stub or real HF backend
-│   └── plot_results.py      # render the diagnostic as figures
+│   ├── plot_results.py      # render the diagnostic as figures
+│   └── prepare_nextqa.py    # build the real-video NExT-QA subset
 ├── figures/                 # generated plots (committed for the README)
-├── notebooks/diagnostics_colab.ipynb
+├── notebooks/
+│   ├── diagnostics_colab.ipynb   # textual channels, real LLM
+│   └── video_vlm_colab.ipynb     # real frames, Qwen2.5-VL on NExT-QA
 └── tests/                   # offline, deterministic, run in CI
 ```
+
+## Roadmap
+
+- **Audio channel for real video** — extend `VLMVideoBackend` with an audio-capable
+  model so the full three-channel ablation grid runs end to end on real media.
+- **Content-removing corruption for text channels** — the `noise` (token-drop)
+  operator as default for robustness curves on textual proxies, since `shuffle`
+  preserves the bag of words (see the measured observation above).
 
 ## License
 
