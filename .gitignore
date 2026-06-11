@@ -7,3 +7,12 @@ build/
 dist/
 .ipynb_checkpoints/
 pytest-cache-files-*/
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.out
+paper/*.log
+*.tmp

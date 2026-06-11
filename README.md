@@ -26,6 +26,10 @@ channels the backend is allowed to see*.
 > sampled frames over a NExT-QA subset, turning the same metrics into end-to-end
 > video measurements (see *Real video* below).
 
+**Tech report**: the full study — method, per-question-type results and limitations —
+is written up in [`paper/report.pdf`](paper/report.pdf) (*Watching Without Seeing Time:
+a per-question-type ablation of modality usage in a video–language model*).
+
 ## Quick start (offline, no GPU)
 
 ```bash
@@ -197,6 +201,7 @@ format_report(...)                  # readable summary
 ├── notebooks/
 │   ├── diagnostics_colab.ipynb   # textual channels, real LLM
 │   └── video_vlm_colab.ipynb     # real frames, Qwen2.5-VL on NExT-QA
+├── paper/                   # tech report (LaTeX + PDF + figures)
 └── tests/                   # offline, deterministic, run in CI
 ```
 
