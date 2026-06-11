@@ -76,7 +76,7 @@ def main() -> int:
             if vid not in vid_to_path:
                 continue
             item = {
-                "id": f"nextqa_{row.get('qid', n_written)}",
+                "id": f"nextqa_{row['type']}_{row.get('qid', n_written)}",
                 "question": str(row["question"]).strip(),
                 "options": [str(row[f"a{i}"]).strip() for i in range(5)],
                 "answer_idx": int(row["answer"]),

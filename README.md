@@ -118,6 +118,30 @@ then run `notebooks/video_vlm_colab.ipynb`
 ([Colab](https://colab.research.google.com/github/mlahozy21/video-modality-diagnostics/blob/main/notebooks/video_vlm_colab.ipynb))
 on a GPU runtime (~30–40 min on an L4 for n=60, inference only).
 
+### Measured: Qwen2.5-VL-3B on real NExT-QA frames
+
+| Metric (n = 56, 8 frames, balanced over question types) | Accuracy |
+|---|---:|
+| Full accuracy (8 frames) | 0.679 |
+| Blind (no frames) | 0.321 |
+| **Collapse gap** | **0.357** |
+| Shuffle 50% of frames | 0.643 |
+| Shuffle 100% of frames | 0.679 |
+| Drop 50% of frames | 0.661 |
+| Drop 75% of frames | 0.589 |
+
+Three readings, in increasing order of interest:
+
+1. **The language prior is real**: blind accuracy is 0.321 — well above the 0.20
+   chance level of 5-way MC. A third of this benchmark slice is answerable without
+   ever seeing the video.
+2. **The model does use the frames**: +0.357 over blind.
+3. **…but only their *content*, not their *order***: dropping frames degrades
+   accuracy steadily (0.679 → 0.589), while fully shuffling the temporal order
+   changes nothing (0.679 → 0.679). On this slice, Qwen2.5-VL-3B behaves like a
+   *bag-of-frames* model — the single-frame/temporal-collapse bias reported in the
+   VideoQA literature, reproduced here with a 3-line ablation.
+
 ## How it works
 
 ```
