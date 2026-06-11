@@ -120,27 +120,43 @@ on a GPU runtime (~30–40 min on an L4 for n=60, inference only).
 
 ### Measured: Qwen2.5-VL-3B on real NExT-QA frames
 
-| Metric (n = 56, 8 frames, balanced over question types) | Accuracy |
+n = 240 (30 per question type, balanced), 8 uniformly sampled frames, inference only:
+
+| Metric | Accuracy |
 |---|---:|
-| Full accuracy (8 frames) | 0.679 |
-| Blind (no frames) | 0.321 |
-| **Collapse gap** | **0.357** |
-| Shuffle 50% of frames | 0.643 |
-| Shuffle 100% of frames | 0.679 |
-| Drop 50% of frames | 0.661 |
-| Drop 75% of frames | 0.589 |
+| Full accuracy (8 frames) | 0.625 |
+| Blind (no frames) | 0.433 |
+| **Collapse gap** | **0.192** |
+| Shuffle 50% of frames | 0.625 |
+| Shuffle 100% of frames | 0.650 |
+| Drop 50% of frames | 0.592 |
+| Drop 75% of frames | 0.600 |
 
-Three readings, in increasing order of interest:
+Per question group (C = causal, T = temporal, D = descriptive):
 
-1. **The language prior is real**: blind accuracy is 0.321 — well above the 0.20
-   chance level of 5-way MC. A third of this benchmark slice is answerable without
-   ever seeing the video.
-2. **The model does use the frames**: +0.357 over blind.
-3. **…but only their *content*, not their *order***: dropping frames degrades
-   accuracy steadily (0.679 → 0.589), while fully shuffling the temporal order
-   changes nothing (0.679 → 0.679). On this slice, Qwen2.5-VL-3B behaves like a
-   *bag-of-frames* model — the single-frame/temporal-collapse bias reported in the
-   VideoQA literature, reproduced here with a 3-line ablation.
+| Group | n | Full | Blind | **Gap** | Shuffle 100% | Δ shuffle | Drop 75% | Δ drop |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Causal | 60 | 0.600 | 0.400 | **+0.200** | 0.650 | +0.050 | 0.567 | −0.033 |
+| Temporal | 90 | 0.511 | 0.478 | **+0.033** | 0.533 | +0.022 | 0.511 | +0.000 |
+| Descriptive | 90 | 0.756 | 0.411 | **+0.344** | 0.767 | +0.011 | 0.711 | −0.044 |
+
+Three findings:
+
+1. **The language prior is large**: blind accuracy is 0.433 on 5-way MC (chance:
+   0.20). Almost half of this benchmark slice is answerable without the video.
+2. **What the video adds is *descriptive*, not *temporal*.** Frames buy +0.344 on
+   descriptive questions and +0.200 on causal ones — but only **+0.033 on temporal
+   questions**, the very category where watching the video should matter most. On
+   temporal QA the model is barely better than its own language prior.
+3. **Temporal order is never used, and few frames suffice.** Fully shuffling the
+   frame order changes nothing in any group (Δ within noise, even slightly
+   positive), and dropping 75% of the frames costs at most ~0.04. Qwen2.5-VL-3B
+   behaves as a *bag-of-frames* model on NExT-QA — the single-frame / temporal-
+   collapse bias reported in the VideoQA literature, here isolated per question
+   type with one ablation grid.
+
+Per-item predictions for every configuration are saved by the notebook
+(`records_video.json`), so further breakdowns need no re-inference.
 
 ## How it works
 
