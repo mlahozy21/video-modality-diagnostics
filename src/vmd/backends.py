@@ -93,13 +93,18 @@ class HFChatBackend:
         import torch  # lazy
         self._load()
         msgs = [{"role": "user", "content": self._prompt(item, view)}]
-        ids = self._tok.apply_chat_template(
-            msgs, add_generation_prompt=True, return_tensors="pt").to(self._m.device)
+        enc = self._tok.apply_chat_template(
+            msgs, add_generation_prompt=True, return_tensors="pt", return_dict=True)
+        input_ids = enc["input_ids"].to(self._m.device)
+        attention_mask = enc.get("attention_mask")
+        if attention_mask is not None:
+            attention_mask = attention_mask.to(self._m.device)
         with torch.no_grad():
-            out = self._m.generate(ids, max_new_tokens=self.max_new_tokens,
+            out = self._m.generate(input_ids, attention_mask=attention_mask,
+                                   max_new_tokens=self.max_new_tokens,
                                    do_sample=False,
                                    pad_token_id=self._tok.eos_token_id)
-        text = self._tok.decode(out[0][ids.shape[1]:], skip_special_tokens=True)
+        text = self._tok.decode(out[0][input_ids.shape[1]:], skip_special_tokens=True)
         match = re.search(r"\d+", text)
         if match and int(match.group()) < len(item.options):
             return int(match.group())
