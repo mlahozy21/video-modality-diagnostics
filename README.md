@@ -70,6 +70,26 @@ The evidence channels are textual (visual facts / audio tags / subtitles), so an
 instruct LLM can be diagnosed; a true end-to-end video VLM only needs a `Backend`
 subclass that consumes raw frames and audio.
 
+### Measured: Qwen2.5-1.5B-Instruct
+
+| Metric | Value |
+|---|---:|
+| Full accuracy | 0.583 |
+| Blind language prior | 0.083 |
+| **Collapse gap** | **0.500** |
+| Contribution: vision | +0.417 |
+| Contribution: subtitle | +0.250 |
+| Contribution: audio | +0.167 |
+
+The model genuinely uses the media (large collapse gap), leaning most on the visual
+channel. Two honest observations: (1) single-modality accuracy is low (0.08–0.25) —
+with only one channel present the model often refuses to commit or follows the
+distractor; (2) accuracy *rises* slightly under frame-shuffle corruption
+(0.58 → 0.75): **token shuffling preserves the bag of words**, so for textual
+evidence channels this probe measures word-order sensitivity rather than content
+removal — use the `noise` (token-drop) corruption, or a frame-level VLM backend,
+to measure true content degradation.
+
 ## How it works
 
 ```
