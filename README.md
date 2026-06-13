@@ -46,8 +46,18 @@ blind language prior     : 0.083
 collapse gap (full-blind): 0.917
 
 modality contribution    : audio +0.333 | subtitle +0.333 | vision +0.250
-vision robustness        : 1.00 / 1.00 / 1.00 / 0.75 / 0.75  (severity 0 → 1)
+robustness sweep (each channel corrupted in isolation, severity 0 → 1):
+  vision  : 1.00 / 1.00 / 1.00 / 0.75 / 0.75
+  audio   : 1.00 / 1.00 / 1.00 / 0.75 / 0.75
+  subtitle: 1.00 / 1.00 / 1.00 / 0.75 / 0.75
 ```
+
+The robustness probe is swept **per available channel** (vision / audio /
+subtitle), not just vision — each severity is averaged over
+`config.robustness_seeds` corruption realizations (deterministic, derived from
+`config.seed`) so the curves are stable and reproducible. The result dict
+exposes `robustness[channel][severity]`, with `vision_robustness` kept as a
+backwards-compatible alias for the vision channel.
 
 > **Honest note.** The stub is a *simulated* model designed to genuinely use the gold
 > modality (and to collapse to the language prior when that channel is ablated or
@@ -63,11 +73,12 @@ vision robustness        : 1.00 / 1.00 / 1.00 / 0.75 / 0.75  (severity 0 → 1)
 ablation. A large gap between "full" and "blind" means the model genuinely uses
 the media; the stub collapses to 0.08 without it.*
 
-![Robustness to visual corruption](figures/robustness.png)
+![Robustness to channel corruption](figures/robustness.png)
 
-*Accuracy as the visual channel is progressively corrupted (frame shuffling).
-The stub tolerates corruption up to its threshold (0.5), then the vision-dependent
-questions fall back to the language prior.*
+*Accuracy as each channel is progressively corrupted in isolation (frame /
+token shuffling), one curve per channel. The stub tolerates corruption up to its
+threshold (0.5), then the questions that depend on the corrupted channel fall
+back to the language prior.*
 
 ## Real model (Colab, GPU)
 
@@ -201,18 +212,4 @@ format_report(...)                  # readable summary
 ├── notebooks/
 │   ├── diagnostics_colab.ipynb   # textual channels, real LLM
 │   └── video_vlm_colab.ipynb     # real frames, Qwen2.5-VL on NExT-QA
-├── paper/                   # tech report (LaTeX + PDF + figures)
-└── tests/                   # offline, deterministic, run in CI
-```
-
-## Roadmap
-
-- **Audio channel for real video** — extend `VLMVideoBackend` with an audio-capable
-  model so the full three-channel ablation grid runs end to end on real media.
-- **Content-removing corruption for text channels** — the `noise` (token-drop)
-  operator as default for robustness curves on textual proxies, since `shuffle`
-  preserves the bag of words (see the measured observation above).
-
-## License
-
-Released under the MIT License — see `LICENSE`.
+├── pa
