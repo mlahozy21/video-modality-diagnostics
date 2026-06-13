@@ -59,11 +59,10 @@ subtitle), not just vision — each severity is averaged over
 exposes `robustness[channel][severity]`, with `vision_robustness` kept as a
 backwards-compatible alias for the vision channel.
 
-> **Honest note.** The stub is a *simulated* model designed to genuinely use the gold
-> modality (and to collapse to the language prior when that channel is ablated or
-> heavily corrupted). The numbers above validate the *methodology* end-to-end — they
-> are not a measurement of a real model. For real measurements, run the Colab
-> notebook below.
+> The quick-start numbers come from a **simulated** backend that genuinely uses the
+> gold modality and collapses to the language prior when that channel is ablated or
+> corrupted: they validate the methodology end-to-end rather than measuring a real
+> model. For measurements on a real video–language model, run the Colab notebook below.
 
 `python scripts/plot_results.py` renders the diagnostic as figures:
 
@@ -106,7 +105,7 @@ subclass that consumes raw frames and audio.
 | Contribution: audio | +0.167 |
 
 The model genuinely uses the media (large collapse gap), leaning most on the visual
-channel. Two honest observations: (1) single-modality accuracy is low (0.08–0.25) —
+channel. Two observations: (1) single-modality accuracy is low (0.08–0.25) —
 with only one channel present the model often refuses to commit or follows the
 distractor; (2) accuracy *rises* slightly under frame-shuffle corruption
 (0.58 → 0.75): **token shuffling preserves the bag of words**, so for textual
@@ -212,4 +211,4 @@ format_report(...)                  # readable summary
 ├── notebooks/
 │   ├── diagnostics_colab.ipynb   # textual channels, real LLM
 │   └── video_vlm_colab.ipynb     # real frames, Qwen2.5-VL on NExT-QA
-├── pa
+├── paper/             
