@@ -80,3 +80,47 @@ def test_report_renders():
     text = format_report(r, "offline-stub")
     assert "collapse gap" in text and "modality contribution" in text
     assert not any(math.isnan(v) for v in r["acc_single_modality"].values())
+
+
+def test_negative_contribution_and_collapse_gap_reported():
+    """A channel that *hurts* must yield a negative contribution (not clamped),
+    and a backend that does worse than blind must yield a negative collapse gap.
+    """
+    # contribution: ablating "vision" scores HIGHER than full -> negative.
+    contrib = modality_contribution(0.70, {"vision": 0.82, "audio": 0.70})
+    assert contrib["vision"] == -0.12, contrib
+    assert contrib["audio"] == 0.0
+    # collapse gap: full < blind -> negative (media is actively misleading).
+    assert collapse_gap(0.40, 0.55) == -0.15
+
+    # End-to-end: a backend that is *misled* by the vision channel. It answers
+    # correctly only when vision is absent; when vision is present it picks a
+    # wrong option. Ablating vision then scores higher than full -> negative
+    # contribution surfaced through run_diagnostic.
+    class VisionMisleadBackend:
+        name = "vision-mislead"
+
+        def answer(self, item, view) -> int:
+            if "vision" in view.available:
+                return (item.answer_idx + 1) % len(item.options)  # wrong on purpose
+            return item.answer_idx  # correct without vision
+
+    items = load_sample()
+    r = run_diagnostic(VisionMisleadBackend(), items)
+    assert r["modality_contribution"]["vision"] < 0, r["modality_contribution"]
+    # report must render the negative cell without crashing and flag it
+    text = format_report(r, "vision-mislead")
+    assert "negative" in text
+
+
+def test_robustness_swept_per_channel():
+    """Robustness is reported for every available channel, not just vision."""
+    items = load_sample()
+    r = run_diagnostic(OfflineStubBackend(), items)
+    assert set(r["robustness"].keys()) == {"vision", "audio", "subtitle"}
+    for m, sweep in r["robustness"].items():
+        assert set(sweep.keys()) == {"0.0", "0.25", "0.5", "0.75", "1.0"}
+        # corrupting the gold channel should not *increase* accuracy at max sev
+        assert sweep["0.0"] >= sweep["1.0"] - 1e-9
+    # backwards-compatible alias still present and matches the vision sweep
+    assert r["vision_robustness"] == r["robustness"]["vision"]

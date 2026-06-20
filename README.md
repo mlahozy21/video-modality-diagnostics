@@ -211,4 +211,18 @@ format_report(...)                  # readable summary
 ├── notebooks/
 │   ├── diagnostics_colab.ipynb   # textual channels, real LLM
 │   └── video_vlm_colab.ipynb     # real frames, Qwen2.5-VL on NExT-QA
-├── paper/             
+├── paper/                   # tech report (LaTeX + PDF + figures)
+└── tests/                   # offline, deterministic, run in CI
+```
+
+## Roadmap
+
+- **Audio channel for real video** — extend `VLMVideoBackend` with an audio-capable
+  model so the full three-channel ablation grid runs end to end on real media.
+- **Content-removing corruption for text channels** — the `noise` (token-drop)
+  operator as default for robustness curves on textual proxies, since `shuffle`
+  preserves the bag of words (see the measured observation above).
+
+## License
+
+Released under the MIT License — see `LICENSE`.
